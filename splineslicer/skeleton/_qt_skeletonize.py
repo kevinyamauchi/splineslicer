@@ -1,4 +1,7 @@
+from typing import List
+
 import magicgui
+from napari.layers import Image, Labels
 from qtpy.QtWidgets import QLabel, QVBoxLayout, QPushButton, QWidget
 from superqt.collapsible import QCollapsible
 
@@ -20,6 +23,7 @@ class QtSkeletonize(QWidget):
         self._binarize_section = QCollapsible(title='1. binarize', parent=self)
         self._binarize_widget = magicgui.magicgui(
             _binarize_image_mg,
+            im_layer={'choices': self._get_image_layers},
             call_button='binarize image'
         )
         self._binarize_section.addWidget(self._binarize_widget.native)
@@ -35,6 +39,7 @@ class QtSkeletonize(QWidget):
         self._skeletonize_section = QCollapsible(title='2. skeletonize', parent=self)
         self._skeletonize_widget = magicgui.magicgui(
             make_skeleton,
+            im={'choices': self._get_image_layers},
             call_button='skeletonize image'
         )
         self._skeletonize_section.addWidget(self._skeletonize_widget.native)
@@ -50,6 +55,7 @@ class QtSkeletonize(QWidget):
         self._fit_section = QCollapsible(title='3. fit spline', parent=self)
         self._fit_widget = magicgui.magicgui(
             fit_spline_to_skeleton_layer,
+            skeleton_layer={'choices': self._get_labels_layers},
             output_path={'widget_type': 'FileEdit', 'mode': 'w', 'filter': '*.json'},
             call_button='fit spline'
         )
@@ -89,3 +95,10 @@ class QtSkeletonize(QWidget):
             metadata={'skan_obj': skeleton_obj}
         )
 
+    def _get_image_layers(self, combo_widget) -> List[Image]:
+        """Get a list of Image layers in the viewer"""
+        return [layer for layer in self._viewer.layers if isinstance(layer, Image)]
+
+    def _get_labels_layers(self, combo_widget) -> List[Labels]:
+        """Get a list of Labels layers in the viewer"""
+        return [layer for layer in self._viewer.layers if isinstance(layer, Labels)]
