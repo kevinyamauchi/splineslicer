@@ -8,10 +8,11 @@ Replace code below according to your needs.
 """
 from napari_plugin_engine import napari_hook_implementation
 
+from .measure._qt_measure import QtMeasure
 from .skeleton._qt_skeletonize import QtSkeletonize
-
+from .slice.slice import slice_image_from_file
 
 @napari_hook_implementation
 def napari_experimental_provide_dock_widget():
     # you can return either a single widget, or a sequence of widgets
-    return [QtSkeletonize]
+    return [QtSkeletonize, slice_image_from_file, QtMeasure]

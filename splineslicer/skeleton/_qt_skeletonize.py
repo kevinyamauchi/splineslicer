@@ -2,13 +2,14 @@ from typing import List
 
 import magicgui
 from napari.layers import Image, Labels
-from qtpy.QtWidgets import QLabel, QVBoxLayout, QPushButton, QWidget
+from qtpy.QtWidgets import QVBoxLayout, QWidget
 from superqt.collapsible import QCollapsible
 
 from ._qt_skeleton_pruner import QtSkeletonSelector
 from .binarize import _binarize_image_mg
 from .skeletonize import _make_skeleton_mg
 from ..spline.spline_utils import fit_spline_to_skeleton_layer
+
 
 class QtSkeletonize(QWidget):
 
@@ -77,6 +78,7 @@ class QtSkeletonize(QWidget):
         self.layout().addWidget(self._binarize_section)
         self.layout().addWidget(self._skeletonize_section)
         self.layout().addWidget(self._curate_section)
+        self.layout().addWidget(self._fit_section)
 
     def _on_skeletonize(self, event):
         # get the results from the event object
