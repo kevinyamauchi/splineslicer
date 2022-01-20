@@ -154,6 +154,8 @@ class SkeletonPruner():
 
     def _disconnect_layer_events(self, layer: Labels):
         layer.mouse_drag_callbacks.remove(self._on_click)
+        layer.bind_key('d', None)
+        layer.bind_key('f', None)
 
     def _on_click(self, layer, event):
         selected_label = layer.get_value(
