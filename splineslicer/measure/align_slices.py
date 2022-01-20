@@ -280,8 +280,10 @@ def _align_stack_mg(
 
 def align_stack_from_layer(source_layer: Image, layer_to_align: Image) -> LayerDataTuple:
     rotations = source_layer.metadata['rotations']
+    start_slice = source_layer.metadata['rotation_settings']['start_slice']
+    end_slice = source_layer.metadata['rotation_settings']['end_slice']
 
-    multi_channel_stack = layer_to_align.data
+    multi_channel_stack = layer_to_align.data[:, start_slice:end_slice, ...]
     aligned_stack = []
     for channel in multi_channel_stack:
         aligned_channel = rotate_stack(channel, rotations)
