@@ -259,12 +259,14 @@ def find_boundaries(
 
         if isinstance(edge_method, str):
             edge_method = BoundaryModes(edge_method)
-        if edge_method == 'derivative':
+        if edge_method == BoundaryModes.DERIVATIVE:
             rising_edge, falling_edge = find_edge_derivative(bg_sub_profile)
-        elif edge_method == 'percent_max':
+        elif edge_method == BoundaryModes.PERCENT_MAX:
             rising_edge, falling_edge = find_edge_percent_max(bg_sub_profile, threshold=edge_value)
-        elif edge_method == 'tanh':
+        elif edge_method == BoundaryModes.TANH:
             rising_edge, falling_edge = find_edge_fit(bg_sub_profile, threshold=edge_value)
+        else:
+            raise ValueError('unknown boundary mode')
 
         # store the values
         nt_length.append(col_max - col_min)
