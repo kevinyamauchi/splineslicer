@@ -1,12 +1,16 @@
 from napari.layers import Labels
 import numpy as np
 
+from .skeleton_utils import make_points_data
+
 
 class SkeletonPruner():
     def __init__(self, viewer):
         self._viewer = viewer
 
         self._skeleton_layer = ''
+        self._points_layer = None
+        self._curating = False
         self._selected_branches = set()
 
     @property
@@ -22,23 +26,79 @@ class SkeletonPruner():
 
         self._skeleton_layer = skeleton_layer
 
+    @property
+    def curating(self) -> bool:
+        return self._curating
+
+    @curating.setter
+    def curating(self, curating: bool):
+        if curating is True:
+            self._initialize_points_layer()
+
+            skeleton_layer = self._viewer.layers[self.skeleton_layer]
+            skeleton_layer.events.properties.connect(self._on_properties_update)
+            self._viewer.layers.selection = [skeleton_layer]
+
+        else:
+            self._cleanup_points_layer()
+        self._curating = curating
+
     def _initialize_skeleton_layer(self, new_skeleton_layer: str, prev_skeleton_layer: str):
         """set up the skeleton layer"""
-        if prev_skeleton_layer == '':
+        if prev_skeleton_layer != '':
             # clean up the old skeleton layer
             self._cleanup_skeleton_layer(prev_skeleton_layer)
-        layer = self._viewer[new_skeleton_layer]
+        layer = self._viewer.layers[new_skeleton_layer]
         self._connect_layer_events(layer)
 
         # add the required column to the layer properties
         if 'keep' not in layer.properties:
             n_branches = len(layer.properties['skeleton-id'])
             layer.properties['keep'] = np.zeros((n_branches,), dtype=bool)
+        if 'flip' not in layer.properties:
+            n_branches = len(layer.properties['skeleton-id'])
+            layer.properties['flip'] = np.zeros((n_branches,), dtype=bool)
+        if 'selected' not in layer.properties:
+            n_branches = len(layer.properties['skeleton-id'])
+            layer.properties['selected'] = np.zeros((n_branches,), dtype=bool)
 
     def _cleanup_skeleton_layer(self, skeleton_layer):
         """clean up a skeleton layer after deselecting it"""
         layer = self._viewer.layers[skeleton_layer]
         self._disconnect_layer_events(layer)
+
+        layer.properties.update(
+            {
+                'selected': np.zeros_like(
+                    layer.properties['skeleton-id'], dtype=bool
+                )
+            }
+        )
+
+    def _initialize_points_layer(self):
+        """Create a points layer for curation viz"""
+        skeleton_layer = self._viewer.layers[self.skeleton_layer]
+        coords, properties = make_points_data(skeleton_layer.properties)
+
+        face_color = {
+            'colors': 'position',
+            'categorical_colormap': {'colormap': {'start': 'green', 'end': 'magenta', 'hide': [0, 0, 0, 0]}}
+        }
+
+        # create the points layer
+        self._points_layer = self._viewer.add_points(
+            coords,
+            properties=properties,
+            face_color=face_color,
+            edge_color='selected',
+            edge_color_cycle=['black', 'white'],
+            name='skeleton points'
+        )
+
+    def _cleanup_points_layer(self):
+        if self._points_layer is not None:
+            self._viewer.layers.remove(self._points_layer)
+            self._points_layer = None
 
     @property
     def selected_branches(self):
@@ -46,13 +106,81 @@ class SkeletonPruner():
 
     @selected_branches.setter
     def selected_branches(self, selected_branches):
-        self._selected_branches = set(selected_branches)
+        selected_branches = set(selected_branches)
+        # set the selected branches in the features table
+        skeleton_layer = self._viewer.layers[self.skeleton_layer]
+        new_layer_properties = skeleton_layer.properties.copy()
+        new_selected = np.zeros_like(new_layer_properties['index'], dtype=bool)
+        for label in selected_branches:
+            feature_index = np.argwhere(
+                new_layer_properties['index'] == label
+            )
+            new_selected[feature_index] = True
+        new_layer_properties.update({'selected': new_selected})
+        skeleton_layer.properties = new_layer_properties
 
-    def toggle_selected_branches(self):
-        pass
+        self._selected_branches = selected_branches
+
+    def toggle_keep_branches(self, event=None):
+        skeleton_layer = self._viewer.layers[self.skeleton_layer]
+        new_layer_properties = skeleton_layer.properties.copy()
+        for label in self.selected_branches:
+            # flip keep bool of the selected labels
+            feature_index = np.argwhere(
+                new_layer_properties['index'] == label
+            )
+            skeleton_layer.properties['keep'][feature_index] = np.logical_not(
+                new_layer_properties['keep'][feature_index]
+            )
+        skeleton_layer.properties = new_layer_properties
+
+    def toggle_flip_branches(self, event=None):
+        skeleton_layer = self._viewer.layers[self.skeleton_layer]
+        new_layer_properties = skeleton_layer.properties.copy()
+        for label in self.selected_branches:
+            # flip the flip bool of the selected labels
+            feature_index = np.argwhere(
+                new_layer_properties['index'] == label
+            )
+            skeleton_layer.properties['flip'][feature_index] = np.logical_not(
+                new_layer_properties['flip'][feature_index]
+            )
+        skeleton_layer.properties = new_layer_properties
 
     def _connect_layer_events(self, layer: Labels):
-        pass
+        layer.mouse_drag_callbacks.append(self._on_click)
+        layer.bind_key('d', self._on_keep_toggle)
+        layer.bind_key('f', self._on_flip_toggle)
 
     def _disconnect_layer_events(self, layer: Labels):
-        pass
+        layer.mouse_drag_callbacks.remove(self._on_click)
+        layer.bind_key('d', None)
+        layer.bind_key('f', None)
+
+    def _on_click(self, layer, event):
+        selected_label = layer.get_value(
+            position=event.position,
+            view_direction=event.view_direction,
+            dims_displayed=event.dims_displayed,
+            world=True
+        )
+
+        if selected_label == 0:
+            self.selected_branches = set()
+        else:
+            self.selected_branches = {selected_label}
+
+    def _on_keep_toggle(self, event):
+        if self.curating is True:
+            self.toggle_keep_branches()
+
+    def _on_flip_toggle(self, event):
+        if self.curating is True:
+            self.toggle_flip_branches()
+
+    def _on_properties_update(self, event):
+        if self._points_layer is not None:
+            skeleton_layer = self._viewer.layers[self.skeleton_layer]
+            _, new_points_properties = make_points_data(skeleton_layer.properties)
+            self._points_layer.properties = new_points_properties
+

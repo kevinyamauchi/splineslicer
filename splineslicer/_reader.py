@@ -11,7 +11,7 @@ https://napari.org/docs/dev/plugins/for_plugin_developers.html
 """
 from napari_plugin_engine import napari_hook_implementation
 
-from .io.ilastik import load_ilastik_predictions
+from .io.ilastik import load_ilastik_predictions, load_aligned
 
 
 @napari_hook_implementation
@@ -36,7 +36,12 @@ def napari_get_reader(path):
         path = path[0]
 
     if "_Probabilities.h5" in path:
-        # ilastik plugins end with _Probabilities.h5
+        # ilastik segs end with _Probabilities.h5
         return load_ilastik_predictions
+    elif "Probabilities Stage 2.h5" in path:
+        # ilastik autocontext segs
+        return load_ilastik_predictions
+    elif ".h5" in path:
+        return load_aligned
     else:
         return None

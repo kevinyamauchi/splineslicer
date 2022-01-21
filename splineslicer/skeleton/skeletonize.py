@@ -1,5 +1,6 @@
 from typing import Tuple
 
+from napari.layers import Image
 from napari.types import LabelsData, ImageData
 import numpy as np
 import pandas as pd
@@ -102,3 +103,16 @@ def make_skeleton(
     skeleton_labels = np.asarray(pruned_skeleton)
 
     return skeleton_labels, pruned_skeleton, pruned_summary
+
+def _make_skeleton_mg(im_layer: Image, min_branch_length: float = 10):
+    """Skeletonize a binary image. This is a wrapper for use with magicgui
+
+    Parameters
+    ----------
+    im_layer : Image
+        The image layer to make the skeleton from
+    min_branch_length : float
+        The miniumum branch length for end point branches. The default value is 10.
+    """
+    im = im_layer.data
+    return make_skeleton(im=im, min_branch_length=min_branch_length)
