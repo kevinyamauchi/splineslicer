@@ -290,7 +290,7 @@ def find_boundaries_from_layer(
         edge_method: BoundaryModes = BoundaryModes.PERCENT_MAX,
         edge_value: float = 0.1,
         pixel_size_um: float = 5.79
-) -> LayerDataTuple:
+) -> List[List[np.ndarray]]:
     channel_names = channel_names.replace(" ", "").split(",")
 
     seg_im = segmentation_layer.data
@@ -357,9 +357,5 @@ def find_boundaries_from_layer(
     all_data = pd.concat(channel_data, ignore_index=True)
     all_data.to_csv(table_output_path)
 
-    layer_kwargs = {
-        'metadata': {'measurements': all_data},
-        'name': 'measurement_crops'
-    }
 
-    return (np.stack(all_cropped_images), layer_kwargs, 'image')
+    return all_cropped_images
