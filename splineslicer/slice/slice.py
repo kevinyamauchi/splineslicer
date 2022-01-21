@@ -132,7 +132,7 @@ def slice_image(
 
 
 @magic_factory(
-    auto_call=True,
+    auto_call=False,
     im_fpath={'label': 'image file path', 'widget_type': 'FileEdit', 'mode': 'r', 'filter': '*.h5'},
     spline_fpath={'label': 'spline file path', 'widget_type': 'FileEdit', 'mode': 'r', 'filter': '*.json'},
     output_fpath={'label': 'output file path', 'widget_type': 'FileEdit', 'mode': 'w', 'filter': '*.h5'},

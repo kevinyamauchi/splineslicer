@@ -2,7 +2,7 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 from napari.layers import Image
-from napari.types import LayerDataTuple
+from napari.types import LayerDataTuple, ImageData
 
 from ..skeleton.binarize import binarize_image, keep_largest_region
 from skimage.measure import regionprops
@@ -13,8 +13,8 @@ def binarize_per_slice(
         im_layer: np.ndarray,
         channel: int = 1,
         threshold: float = 0.5,
-        closing_size: Optional[int] = None
-) -> np.ndarray:
+        closing_size: int = 1
+) -> ImageData:
     """Binaraize an image and keep only the largest structure in each slice.
      Small holes are filled with the scipy.ndimage.binary_fill_holes() function.
 
@@ -192,9 +192,9 @@ def align_stack(
             rotations[slice_index::] = rotations[slice_index::] + 180
 
     # rotate the stack
-    aligned_stack = rotate_stack(im_stack, rotations)
+    aligned_stack = rotate_stack(selected_indices, rotations)
 
-    return aligned_stack
+    return aligned_stack, rotations
 
 
 def _align_stack_mg(
@@ -244,8 +244,11 @@ def _align_stack_mg(
     end_slice = int(end_slice)
 
     flip_rotation_indices.replace(" ", "")
-    flip_rotation_indices = flip_rotation_indices.replace(" ", "").split(",")
-    flip_rotation_indices = [int(index) for index in flip_rotation_indices]
+    if flip_rotation_indices == '':
+        flip_rotation_indices = None
+    else:
+        flip_rotation_indices = flip_rotation_indices.replace(" ", "").split(",")
+        flip_rotation_indices = [int(index) for index in flip_rotation_indices]
 
     aligned_stack, rotations = align_stack(
         im_stack=im,
