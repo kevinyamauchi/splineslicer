@@ -20,6 +20,39 @@ def get_spline_points(spline, increment: float = 0.01) -> np.ndarray:
     return np.asarray(spline.evalpts)
 
 
+def fit_spline_to_skeleton(
+        skeleton_obj,
+        segments_to_flip,
+        segments_to_keep,
+        order_image_shape,
+        order: int = 3,
+        n_ctrl_pts: int = 25,
+):
+    clean_coords = []
+    for i in segments_to_keep:
+        path_coords = skeleton_obj.path_coordinates(i)
+        if i in segments_to_flip:
+            path_coords = np.flip(path_coords, axis=0)
+        clean_coords.append(path_coords)
+    clean_coords = np.vstack(clean_coords).astype(int)
+
+    n_coords = len(clean_coords)
+
+    order_image = np.zeros(order_image_shape, dtype=float)
+
+    increment = 1 / n_coords
+    value = 0
+    for i in range(n_coords):
+        coord = clean_coords[i]
+        order_image[coord[0], coord[1], coord[2]] = value
+        value += increment
+
+    # fit the spline
+    spline = fit_spline(clean_coords, order=order, n_ctrl_pts=n_ctrl_pts)
+
+    return spline, order_image
+
+
 def fit_spline_to_skeleton_layer(
         skeleton_layer: Labels,
         output_path: str,
@@ -40,31 +73,14 @@ def fit_spline_to_skeleton_layer(
     keep_mask = skeleton_layer.properties['keep']
     segments_to_keep = skeleton_layer.properties['skeleton-id'][keep_mask] - 1
 
-    clean_coords = []
-    for i in segments_to_keep:
-        path_coords = skeleton_obj.path_coordinates(i)
-        if i in segments_to_flip:
-            path_coords = np.flip(path_coords, axis=0)
-        clean_coords.append(path_coords)
-    clean_coords = np.vstack(clean_coords).astype(int)
-
-    n_coords = len(clean_coords)
-
-    order_image = np.zeros_like(skeleton_layer.data, dtype=float)
-
-    increment = 1 / n_coords
-    value = 0
-    for i in range(n_coords):
-        coord = clean_coords[i]
-        order_image[coord[0], coord[1], coord[2]] = value
-        value += increment
-
-    # make the skeleton image
-    curated_skeleton = order_image.copy()
-    curated_skeleton[curated_skeleton > 0] = 1
-
-    # fit the spline
-    spline = fit_spline(clean_coords, order=order, n_ctrl_pts=n_ctrl_pts)
+    spline, order_image = fit_spline_to_skeleton(
+        skeleton_obj=skeleton_obj,
+        segments_to_flip=segments_to_flip,
+        segments_to_keep=segments_to_keep,
+        order_image_shape=skeleton_layer.data.shape,
+        order=order,
+        n_ctrl_pts=n_ctrl_pts,
+    )
     spline_points = get_spline_points(spline, increment=0.01)
 
     # save the spline
