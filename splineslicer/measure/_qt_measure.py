@@ -91,7 +91,7 @@ class QtMeasure(QWidget):
             stain_layer={'choices': self._get_image_layers},
             spline_file_path={'widget_type': 'FileEdit', 'mode': 'r', 'filter': '*.json'},
             table_output_path={'widget_type': 'FileEdit', 'mode': 'w', 'filter': '*.csv'},
-            call_button='align image'
+            call_button='measure image'
         )
         self._measure_section.addWidget(self._measure_widget.native)
         self._viewer.layers.events.inserted.connect(
