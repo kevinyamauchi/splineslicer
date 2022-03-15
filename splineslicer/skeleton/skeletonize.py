@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from skan import Skeleton, summarize
 from skimage.morphology import binary_dilation, cube, skeletonize
-
+from napari_tools_menu import register_function
 
 def _remove_non_main(skeleton_obj: Skeleton) -> Skeleton:
     """Remove the non-main branches from the skeleton
@@ -72,7 +72,6 @@ def prune_skeleton(
 
     return pruned_skeleton_obj
 
-
 def make_skeleton(
     im: ImageData,
     min_branch_length: float = 10,
@@ -116,3 +115,23 @@ def _make_skeleton_mg(im_layer: Image, min_branch_length: float = 10):
     """
     im = im_layer.data
     return make_skeleton(im=im, min_branch_length=min_branch_length)
+
+@register_function(menu="Segmentation post-processing > Make skeleton from binary image (splisli)")
+def make_skeleton_ntm(
+    binary_image: LabelsData,
+    min_branch_length: float = 10,
+) -> LabelsData:
+    """Skeletonize a binary image. This is a wrapper for use with magicgui + napari tools menu + assistant
+
+    Parameters
+    ----------
+    binary_image
+    min_branch_length
+
+    Returns
+    -------
+
+    """
+
+    skeleton_labels, pruned_skeleton, pruned_summary = make_skeleton(binary_image, min_branch_length)
+    return skeleton_labels

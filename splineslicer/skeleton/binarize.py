@@ -1,14 +1,16 @@
 from typing import Optional
 
 from napari.layers import Image
-from napari.types import LayerDataTuple
+from napari.types import LayerDataTuple, LabelsData
 import numpy as np
 from scipy import ndimage as ndi
 from skimage.measure import regionprops_table
 from skimage.morphology import binary_closing, cube
 
+from napari_tools_menu import register_function
 
-def keep_largest_region(binary_im: np.ndarray) -> np.ndarray:
+@register_function(menu="Segmentation post-processing > Keep largest region (splisli)")
+def keep_largest_region(binary_im: LabelsData) -> LabelsData:
     """Keep only the largest region in a binary image. The region
     is calculated using the scipy.ndimage.label function.
 
