@@ -1,3 +1,4 @@
+import pandas as pd
 from napari.layers import Labels
 import numpy as np
 
@@ -37,10 +38,22 @@ class SkeletonPruner():
 
             skeleton_layer = self._viewer.layers[self.skeleton_layer]
             skeleton_layer.events.properties.connect(self._on_properties_update)
+            self._setup_curated_skeleton_layer()
             self._viewer.layers.selection = [skeleton_layer]
+
+            # make only the skeleton layers visible
+            layers_to_view = [
+                skeleton_layer,
+                self._curated_skeleton_layer,
+                self._points_layer
+            ]
+            for layer in self._viewer.layers:
+                if layer not in layers_to_view:
+                    layer.visible = False
 
         else:
             self._cleanup_points_layer()
+            self._cleanup_curated_skeleton_layer()
         self._curating = curating
 
     def _initialize_skeleton_layer(self, new_skeleton_layer: str, prev_skeleton_layer: str):
@@ -100,6 +113,54 @@ class SkeletonPruner():
             self._viewer.layers.remove(self._points_layer)
             self._points_layer = None
 
+    def _setup_curated_skeleton_layer(self):
+        if self.skeleton_layer == "":
+            return
+        curated_skeleton_paths, skeleton_properties = self._draw_curated_skeleton()
+
+        self._curated_skeleton_layer = self._viewer.add_shapes(
+            curated_skeleton_paths,
+            properties=skeleton_properties,
+            shape_type='path',
+            opacity=0.7,
+            name="curated skeleton"
+        )
+        self._curated_skeleton_layer.edge_color_cycle_map = {True: np.array([1, 1, 1, 1]), False: np.array([0, 0, 0, 0])}
+        self._curated_skeleton_layer.edge_color = "keep"
+
+    def _cleanup_curated_skeleton_layer(self):
+        if self._curated_skeleton_layer is not None:
+            self._viewer.layers.remove(self._curated_skeleton_layer)
+            self._points_layer = None
+
+    def _update_curated_skeleton_layer(self):
+        if self.skeleton_layer == "":
+            return
+
+        skeleton_layer = self._viewer.layers[self.skeleton_layer]
+        self._curated_skeleton_layer.properties = skeleton_layer.properties
+        self._curated_skeleton_layer.refresh_colors()
+
+    def _draw_curated_skeleton(self) -> np.ndarray:
+        skeleton_layer = self._viewer.layers[self.skeleton_layer]
+        skeleton_image = skeleton_layer.data
+        curated_skeleton_image = np.zeros_like(skeleton_image, dtype=float)
+
+        skeleton_properties = skeleton_layer.properties
+        skeleton = skeleton_layer.metadata["skan_obj"]
+        branches_to_keep = skeleton_properties["keep"]
+
+        # get the branches to include
+        # skeleton_branch_ids = skeleton_properties["index"]
+        # labels_to_draw = skeleton_branch_ids[branches_to_keep]
+        # skeleton_ids_to_draw = labels_to_draw - 1
+        all_paths = [
+            skeleton.path_coordinates(i)
+            for i in range(skeleton.n_paths)
+        ]
+
+        return all_paths, skeleton_properties
+
     @property
     def selected_branches(self):
         return self._selected_branches
@@ -133,6 +194,7 @@ class SkeletonPruner():
                 new_layer_properties['keep'][feature_index]
             )
         skeleton_layer.properties = new_layer_properties
+        self._update_curated_skeleton_layer()
 
     def toggle_flip_branches(self, event=None):
         skeleton_layer = self._viewer.layers[self.skeleton_layer]

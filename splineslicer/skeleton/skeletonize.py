@@ -97,7 +97,7 @@ def make_skeleton(
     pruned_summary = summarize(pruned_skeleton)
 
     pruned_summary['index'] = np.arange(pruned_summary.shape[0]) + 1
-    pruned_summary['keep'] = True
+    pruned_summary['keep'] = False
     pruned_summary['flip'] = False
 
     skeleton_labels = np.asarray(pruned_skeleton)
