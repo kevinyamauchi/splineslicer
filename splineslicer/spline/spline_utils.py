@@ -34,11 +34,11 @@ def fit_spline_to_skeleton_layer(
 
     # get the indices to flip
     flip_mask = skeleton_layer.properties['flip']
-    segments_to_flip = skeleton_layer.properties['skeleton-id'][flip_mask] - 1
+    segments_to_flip = skeleton_layer.properties['index'][flip_mask] - 1
 
     # get the indices to keep
     keep_mask = skeleton_layer.properties['keep']
-    segments_to_keep = skeleton_layer.properties['skeleton-id'][keep_mask] - 1
+    segments_to_keep = skeleton_layer.properties['index'][keep_mask] - 1
 
     clean_coords = []
     for i in segments_to_keep:
