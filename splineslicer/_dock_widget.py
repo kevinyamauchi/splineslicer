@@ -11,6 +11,7 @@ from napari_plugin_engine import napari_hook_implementation
 from .measure._qt_measure import QtMeasure
 from .skeleton._qt_skeletonize import QtSkeletonize
 from .slice.slice import slice_image_from_file
+from .view.results_viewer import QtResultsViewer
 
 
 @napari_hook_implementation
@@ -19,5 +20,6 @@ def napari_experimental_provide_dock_widget():
     return [
         (QtSkeletonize, {"name": "skeletonize"}),
         (slice_image_from_file, {"name": "slice image from file"}),
-        (QtMeasure, {"name": "measure domains"})
+        (QtMeasure, {"name": "measure domains"}),
+        (QtResultsViewer, {"name": "view results"})
     ]

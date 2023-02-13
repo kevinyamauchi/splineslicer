@@ -65,15 +65,15 @@ class SkeletonPruner():
         self._connect_layer_events(layer)
 
         # add the required column to the layer properties
-        if 'keep' not in layer.properties:
-            n_branches = len(layer.properties['skeleton-id'])
-            layer.properties['keep'] = np.zeros((n_branches,), dtype=bool)
-        if 'flip' not in layer.properties:
-            n_branches = len(layer.properties['skeleton-id'])
-            layer.properties['flip'] = np.zeros((n_branches,), dtype=bool)
-        if 'selected' not in layer.properties:
-            n_branches = len(layer.properties['skeleton-id'])
-            layer.properties['selected'] = np.zeros((n_branches,), dtype=bool)
+        if 'keep' not in layer.features:
+            n_branches = len(layer.features['skeleton-id'])
+            layer.features['keep'] = np.zeros((n_branches,), dtype=bool)
+        if 'flip' not in layer.features:
+            n_branches = len(layer.features['skeleton-id'])
+            layer.features['flip'] = np.zeros((n_branches,), dtype=bool)
+        if 'selected' not in layer.features:
+            n_branches = len(layer.features['skeleton-id'])
+            layer.features['selected'] = np.zeros((n_branches,), dtype=bool)
 
     def _cleanup_skeleton_layer(self, skeleton_layer):
         """clean up a skeleton layer after deselecting it"""
