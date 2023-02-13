@@ -27,6 +27,7 @@ class QtImageSliceWidget(QWidget):
         self.stain_channeL_names: List[str] = []
         self.min_slice: int = 0
         self.max_slice: int = 0
+        self.draw_domain_boundaries = False
 
         # create the slider
         self.slice_slider = QLabeledSlider(Qt.Orientation.Horizontal)
@@ -59,19 +60,19 @@ class QtImageSliceWidget(QWidget):
         # create the plot
         self.plot_column_selector = QComboBox()
         self.plot_column_selector.currentIndexChanged.connect(self._update_plot)
-        self.plot = pg.PlotWidget(parent=self)
+        self.plot_widget = pg.PlotWidget(parent=self)
         self.plot_slice_line = pg.InfiniteLine(
             angle=90,
             movable=False
         )
-        self.plot.addItem(self.plot_slice_line)
+        self.plot_widget.addItem(self.plot_slice_line)
 
         self.setLayout(QVBoxLayout())
         self.layout().addWidget(self.slice_slider)
         self.layout().addWidget(self.image_selector)
         self.layout().addWidget(self.image_widget)
         self.layout().addWidget(self.plot_column_selector)
-        self.layout().addWidget(self.plot)
+        self.layout().addWidget(self.plot_widget)
 
     def _on_slider_moved(self, event=None):
         self.draw_at_current_slice_index()
@@ -104,13 +105,19 @@ class QtImageSliceWidget(QWidget):
         ]
 
         # set the neural tube boundaries
-        neural_tube_ventral_boundary = slice_row["nt_start_column_px"].values[0]
-        neural_tube_dorsal_boundary = slice_row["nt_end_column_px"].values[0]
-        self.nt_ventral_position.setValue(neural_tube_ventral_boundary)
-        self.nt_dorsal_position.setValue(neural_tube_dorsal_boundary)
+        print(self.draw_domain_boundaries)
+        if self.draw_domain_boundaries:
+            neural_tube_ventral_boundary = slice_row["nt_start_column_px"].values[0]
+            neural_tube_dorsal_boundary = slice_row["nt_end_column_px"].values[0]
+            self.nt_ventral_position.setValue(neural_tube_ventral_boundary)
+            self.nt_dorsal_position.setValue(neural_tube_dorsal_boundary)
+        else:
+            self.nt_ventral_position.setVisible(False)
+            self.nt_dorsal_position.setVisible(False)
+
 
     def _update_plot(self, event=None):
-        self.plot.clear()
+        self.plot_widget.clear()
 
         # get the column
         current_target = self.stain_channeL_names[self.current_channel_index]
@@ -119,8 +126,9 @@ class QtImageSliceWidget(QWidget):
         y_data = target_measurements[column_to_plot].values
         x_data = target_measurements["slice_index"].values
 
-        self.plot.plot(x_data, y_data)
-        self.plot.addItem(self.plot_slice_line)
+        self.plot_widget.plot(x_data, y_data)
+
+        self.plot_widget.addItem(self.plot_slice_line)
         current_slice_index = int(self.slice_slider.value())
         self.plot_slice_line.setValue(current_slice_index)
 
@@ -129,7 +137,7 @@ class QtImageSliceWidget(QWidget):
             "bottom": pg.AxisItem(orientation="bottom", text="slice index"),
             "left": pg.AxisItem(orientation="left", text=column_to_plot)
         }
-        self.plot.setAxisItems(axis_parameters)
+        self.plot_widget.setAxisItems(axis_parameters)
 
     def _update_plot_slice_line(self, slice_index):
         self.plot_slice_line.setValue(slice_index)
@@ -153,6 +161,11 @@ class QtImageSliceWidget(QWidget):
         self.pixel_size_um = pixel_size_um
         self.image_slices = stain_image
         self.results_table = results_table
+
+        if "nt_start_column_px" in self.results_table.columns:
+            self.draw_domain_boundaries = True
+        else:
+            self.draw_domain_boundaries = False
 
         # add the image channels
         if stain_channel_names is not None:
