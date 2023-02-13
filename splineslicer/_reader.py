@@ -12,6 +12,7 @@ https://napari.org/docs/dev/plugins/for_plugin_developers.html
 from napari_plugin_engine import napari_hook_implementation
 
 from .io.ilastik import load_ilastik_predictions, load_aligned
+from .io.spline import load_spline_geomdl
 
 
 @napari_hook_implementation
@@ -35,13 +36,19 @@ def napari_get_reader(path):
         # so we are only going to look at the first file.
         path = path[0]
 
+    if not isinstance(path, str):
+        path = path.as_posix()
+
     if "_Probabilities.h5" in path:
-        # ilastik segs end with _Probabilities.h5
+        # ilastik probability images end with _Probabilities.h5
         return load_ilastik_predictions
     elif "Probabilities Stage 2.h5" in path:
         # ilastik autocontext segs
         return load_ilastik_predictions
     elif ".h5" in path:
         return load_aligned
+    elif ".json" in path:
+        # geomdl spline
+        return load_spline_geomdl
     else:
         return None

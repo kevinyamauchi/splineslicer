@@ -5,8 +5,9 @@ from napari.layers import Image, Labels
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 from superqt.collapsible import QCollapsible
 
-from .align_slices import binarize_per_slice, _align_stack_mg, align_stack_from_layer
+from .align_slices import binarize_per_slice, align_mask_and_stain_from_layer, align_stack_from_layer
 from .measure_boundaries import find_boundaries_from_layer
+
 
 class QtMeasure(QWidget):
 
@@ -22,16 +23,12 @@ class QtMeasure(QWidget):
         # make the align section
         self._setup_align_widget()
 
-        # make the apply align section
-        self._setup_apply_align_widget()
-
         # make the measure section
         self._setup_measure_widget()
 
         self.setLayout(QVBoxLayout())
         self.layout().addWidget(self._binarize_section)
         self.layout().addWidget(self._align_section)
-        self.layout().addWidget(self._apply_align_section)
         self.layout().addWidget(self._measure_section)
 
     def _setup_binarize_widget(self):
@@ -51,11 +48,12 @@ class QtMeasure(QWidget):
         self._binarize_widget.reset_choices()
 
     def _setup_align_widget(self):
-        self._align_section = QCollapsible(title='2. align mask', parent=self)
+        self._align_section = QCollapsible(title='2. align images', parent=self)
         self._align_widget = magicgui.magicgui(
-            _align_stack_mg,
-            im_layer={'choices': self._get_image_layers},
-            call_button='align mask'
+            align_mask_and_stain_from_layer,
+            mask_layer={'choices': self._get_image_layers},
+            stain_layer={'choices': self._get_image_layers},
+            call_button='align layers'
         )
         self._align_section.addWidget(self._align_widget.native)
         self._viewer.layers.events.inserted.connect(
@@ -66,31 +64,15 @@ class QtMeasure(QWidget):
         )
         self._align_widget.reset_choices()
 
-    def _setup_apply_align_widget(self):
-        self._apply_align_section = QCollapsible(title='3. align image', parent=self)
-        self._apply_align_widget = magicgui.magicgui(
-            align_stack_from_layer,
-            source_layer={'choices': self._get_aligned_layer},
-            layer_to_align={'choices': self._get_image_layers},
-            call_button='align image'
-        )
-        self._apply_align_section.addWidget(self._apply_align_widget.native)
-        self._viewer.layers.events.inserted.connect(
-            self._apply_align_widget.reset_choices
-        )
-        self._viewer.layers.events.removed.connect(
-            self._apply_align_widget.reset_choices
-        )
-        self._apply_align_widget.reset_choices()
-
     def _setup_measure_widget(self):
-        self._measure_section = QCollapsible(title='4. measure boundaries', parent=self)
+        self._measure_section = QCollapsible(title='3. measure boundaries', parent=self)
         self._measure_widget = magicgui.magicgui(
             find_boundaries_from_layer,
             segmentation_layer={'choices': self._get_aligned_layer},
-            stain_layer={'choices': self._get_image_layers},
+            stain_layer={'choices': self._get_aligned_layer},
             spline_file_path={'widget_type': 'FileEdit', 'mode': 'r', 'filter': '*.json'},
             table_output_path={'widget_type': 'FileEdit', 'mode': 'w', 'filter': '*.csv'},
+            aligned_slices_output_path={'widget_type': 'FileEdit', 'mode': 'w', 'filter': '*.h5'},
             call_button='measure image'
         )
         self._measure_section.addWidget(self._measure_widget.native)

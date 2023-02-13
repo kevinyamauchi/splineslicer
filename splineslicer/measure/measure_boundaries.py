@@ -11,6 +11,9 @@ from scipy.signal import find_peaks
 from skimage.measure import label, regionprops
 
 
+from ..io.hdf5 import save_aligned_slices
+
+
 class BoundaryModes(Enum):
     DERIVATIVE = 'derivative'
     PERCENT_MAX = 'percent_max'
@@ -222,6 +225,8 @@ def find_boundaries(
     ventral_boundary = []
     dorsal_boundary = []
     nt_length = []
+    nt_col_start = []
+    nt_col_end = []
     bg_sub_profiles = []
     cropped_ims = []
     for nt_seg_slice, raw_slice in zip(seg_im, stain_im):
@@ -242,7 +247,7 @@ def find_boundaries(
         sample_region = raw_slice[row_min:row_max, col_min:col_max]
         summed_profile = sample_region.sum(axis=0)
 
-        # correct for columsn with no nt labels
+        # correct for columns with no nt labels
         n_sample_rows = nt_seg_slice[row_min:row_max, col_min:col_max].sum(axis=0)
         no_nt_indices = np.argwhere(n_sample_rows == 0)
         n_sample_rows[no_nt_indices] = 1
@@ -274,8 +279,10 @@ def find_boundaries(
         dorsal_boundary.append(falling_edge)
         cropped_ims.append(raw_crop)
         bg_sub_profiles.append(bg_sub_profile)
+        nt_col_start.append(col_min)
+        nt_col_end.append(col_max - 1)
 
-    return nt_length, ventral_boundary, dorsal_boundary, bg_sub_profiles, cropped_ims
+    return nt_length, ventral_boundary, dorsal_boundary, bg_sub_profiles, cropped_ims, nt_col_start, nt_col_end
 
 
 def find_boundaries_from_layer(
@@ -283,6 +290,7 @@ def find_boundaries_from_layer(
         stain_layer: Image,
         spline_file_path: str,
         table_output_path: str,
+        aligned_slices_output_path: str,
         channel_names: str,
         half_width: int = 10,
         bg_sample_pos: float = 0.7,
@@ -304,7 +312,7 @@ def find_boundaries_from_layer(
     channel_data = []
     all_cropped_images = []
     for i, channel_im in enumerate(stain_im):
-        nt_length, ventral_boundary, dorsal_boundary, bg_sub_profiles, cropped_ims = find_boundaries(
+        nt_length, ventral_boundary_px, dorsal_boundary_px, bg_sub_profiles, cropped_ims, nt_col_start, nt_col_end = find_boundaries(
             seg_im=seg_im,
             stain_im=channel_im,
             half_width=half_width,
@@ -317,11 +325,11 @@ def find_boundaries_from_layer(
 
         nt_length = np.asarray(nt_length)
         nt_length_um = nt_length * pixel_size_um
-        ventral_boundary = np.asarray(ventral_boundary) * pixel_size_um
-        dorsal_boundary = np.asarray(dorsal_boundary) * pixel_size_um
+        ventral_boundary_um = np.asarray(ventral_boundary_px) * pixel_size_um
+        dorsal_boundary_um = np.asarray(dorsal_boundary_px) * pixel_size_um
 
-        ventral_boundary_rel = ventral_boundary / nt_length_um
-        dorsal_boundary_rel = dorsal_boundary / nt_length_um
+        ventral_boundary_rel = ventral_boundary_um / nt_length_um
+        dorsal_boundary_rel = dorsal_boundary_um / nt_length_um
 
         # get the slice length and increment in microns
         spline = exchange.import_json(spline_file_path)[0]
@@ -343,19 +351,30 @@ def find_boundaries_from_layer(
                 'slice_position_rel_um': slice_position_rel_um,
                 'nt_length_um': nt_length_um,
                 'target': target,
-                'ventral_boundary_um': ventral_boundary,
-                'dorsal_boundary_um': dorsal_boundary,
+                'ventral_boundary_um': ventral_boundary_um,
+                'dorsal_boundary_um': dorsal_boundary_um,
                 'ventral_boundary_rel': ventral_boundary_rel,
                 'dorsal_boundary_rel': dorsal_boundary_rel,
                 'domain_edge_threshold': threshold_list,
-                'rotation': rotations
+                'rotation': rotations,
+                'nt_start_column_px': nt_col_start,
+                'nt_end_column_px': nt_col_end,
+                'ventral_boundary_px': ventral_boundary_px,
+                'dorsal_boundary_px': dorsal_boundary_px
             }
         )
         channel_data.append(df)
 
-
     all_data = pd.concat(channel_data, ignore_index=True)
     all_data.to_csv(table_output_path)
 
+    # save the aligned images
+    save_aligned_slices(
+        file_path=aligned_slices_output_path,
+        segmentation_layer=segmentation_layer,
+        stain_layer=stain_layer,
+        stain_channel_names=channel_names,
+        compression="gzip"
+    )
 
     return all_cropped_images

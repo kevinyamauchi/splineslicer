@@ -1,7 +1,7 @@
 from typing import List, Optional, Tuple
 
 import numpy as np
-from napari.layers import Image
+from napari.layers import Layer, Image
 from napari.types import LayerDataTuple, ImageData
 
 from ..skeleton.binarize import binarize_image, keep_largest_region
@@ -10,11 +10,11 @@ from skimage.transform import rotate
 
 
 def binarize_per_slice(
-        im_layer: np.ndarray,
+        im_layer: Image,
         channel: int = 1,
         threshold: float = 0.5,
         closing_size: int = 1
-) -> ImageData:
+) -> List[LayerDataTuple]:
     """Binaraize an image and keep only the largest structure in each slice.
      Small holes are filled with the scipy.ndimage.binary_fill_holes() function.
 
@@ -43,7 +43,20 @@ def binarize_per_slice(
     binary_im = binarize_image(im=im, channel=channel, threshold=threshold, closing_size=closing_size)
     binarized_clean = np.asarray([keep_largest_region(s) for s in binary_im])
 
-    return binarized_clean
+    layer_name = f"{im_layer.name} binarized"
+    layer_metadata = {
+        "metadata": {
+            "binarize_settings": {
+                "layer_name": im_layer.name,
+                "binarize_channel": 1,
+                "binarize_threshold": 0.5,
+                "binarize_closing_size": closing_size
+            }
+        },
+        "name": layer_name
+    }
+
+    return [(binarized_clean, layer_metadata, "image")]
 
 
 def calculate_slice_rotations(im_stack: np.ndarray, max_rotation:float = 45) -> List[float]:
@@ -271,14 +284,23 @@ def _align_stack_mg(
         'rotations': rotations
     }
 
+    if "binarize_settings" in im_layer.metadata:
+        binarize_settings = im_layer.metadata["binarize_settings"]
+        metadata.update({"binarize_settings": binarize_settings})
+
     layer_name = f'{im_layer.name} aligned'
-    data_tuple = (
+    layer_metadata = {
+        'metadata': metadata,
+        'name': layer_name,
+        "opacity": 0.7,
+        "colormap": "bop blue",
+    }
+
+    return (
         aligned_stack,
-        {'metadata': metadata, 'name': layer_name},
+        layer_metadata,
         'image'
     )
-
-    return data_tuple
 
 
 def align_stack_from_layer(source_layer: Image, layer_to_align: Image) -> LayerDataTuple:
@@ -293,4 +315,43 @@ def align_stack_from_layer(source_layer: Image, layer_to_align: Image) -> LayerD
         aligned_stack.append(aligned_channel)
     aligned_stack = np.stack(aligned_stack)
 
-    return (aligned_stack, {'metadata': {'rotations': rotations}}, 'image')
+    layer_name = f'{layer_to_align.name} aligned'
+    layer_metadata = {
+        'name': layer_name,
+        'metadata': {
+           'rotations': rotations,
+        },
+    }
+
+    return aligned_stack, layer_metadata , 'image'
+
+
+def align_mask_and_stain_from_layer(
+        mask_layer: Image,
+        stain_layer: Image,
+        start_slice: str,
+        end_slice: str,
+        flip_rotation_indices: str,
+        max_rotation: float = 90,
+        invert_rotation: bool = False
+) -> List[LayerDataTuple]:
+
+    # align the mask
+    aligned_mask_data = _align_stack_mg(
+        im_layer=mask_layer,
+        start_slice=start_slice,
+        end_slice=end_slice,
+        flip_rotation_indices=flip_rotation_indices,
+        max_rotation=max_rotation,
+        invert_rotation=invert_rotation
+    )
+    aligned_layer = Layer.create(*aligned_mask_data)
+
+    # apply the same rotations to the stain layer
+    aligned_stain_data = align_stack_from_layer(
+        source_layer=aligned_layer,
+        layer_to_align=stain_layer
+    )
+
+
+    return [aligned_stain_data, aligned_mask_data]
