@@ -82,13 +82,11 @@ class QtSkeletonize(QWidget):
 
     def _on_skeletonize(self, event):
         # get the results from the event object
-        skeletononized_im, skeleton_obj, summary = event.value
+        skeletononized_im, skeleton_obj, summary = event
 
         # store the skeleton data
         self.skeleton.update({'skeletonize': skeleton_obj})
         self.summary.update({'skeletonize': summary})
-
-        print(skeletononized_im)
 
         # make the layer with the skeleton
         self._viewer.add_labels(
