@@ -16,6 +16,7 @@ def load_spline_geomdl(filepath: str) -> List[ShapesData]:
     return [(
         spline_points,
         {
+            'name': 'spline',
             'shape_type': 'path',
             'edge_width': 0.5,
             'edge_color': 'magenta',
