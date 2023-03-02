@@ -28,6 +28,7 @@ class QtImageSliceWidget(QWidget):
         self.min_slice: int = 0
         self.max_slice: int = 0
         self.draw_domain_boundaries = False
+        self.current_channel_index: int = 0
 
         # create the slider
         self.slice_slider = QLabeledSlider(Qt.Orientation.Horizontal)
@@ -105,7 +106,6 @@ class QtImageSliceWidget(QWidget):
         ]
 
         # set the neural tube boundaries
-        print(self.draw_domain_boundaries)
         if self.draw_domain_boundaries:
             neural_tube_ventral_boundary = slice_row["nt_start_column_px"].values[0]
             neural_tube_dorsal_boundary = slice_row["nt_end_column_px"].values[0]
@@ -115,8 +115,12 @@ class QtImageSliceWidget(QWidget):
             self.nt_ventral_position.setVisible(False)
             self.nt_dorsal_position.setVisible(False)
 
-
     def _update_plot(self, event=None):
+
+        if len(self.stain_channeL_names) == 0:
+            # if no data loaded - just return
+            return
+
         self.plot_widget.clear()
 
         # get the column
@@ -162,10 +166,10 @@ class QtImageSliceWidget(QWidget):
         self.image_slices = stain_image
         self.results_table = results_table
 
-        if "nt_start_column_px" in self.results_table.columns:
-            self.draw_domain_boundaries = True
-        else:
-            self.draw_domain_boundaries = False
+        # update the plot-able columns
+        column_names = list(self.results_table.columns.values)
+        self.plot_column_selector.clear()
+        self.plot_column_selector.addItems(column_names)
 
         # add the image channels
         if stain_channel_names is not None:
@@ -176,13 +180,21 @@ class QtImageSliceWidget(QWidget):
             self.stain_channeL_names = [
                 f"channel {channel_index}" for channel_index in range(n_channels)
             ]
+
+        # check if all stain channels are in the results table
+        contains_channel = [
+            np.any(results_table["target"] == channel)
+            for channel in self.stain_channeL_names
+        ]
+        all_channels_in_results_table = np.all(contains_channel)
+
+        if ("nt_start_column_px" in self.results_table.columns) and all_channels_in_results_table:
+            self.draw_domain_boundaries = True
+        else:
+            self.draw_domain_boundaries = False
+
         self.image_selector.clear()
         self.image_selector.addItems(self.stain_channeL_names)
-
-        # update the plot-able columns
-        column_names = list(self.results_table.columns.values)
-        self.plot_column_selector.clear()
-        self.plot_column_selector.addItems(column_names)
 
         # refresh the selected channel index and redraw
         self._update_current_channel()
@@ -245,16 +257,19 @@ class QtResultsViewer(QWidget):
 
     def load_data(
         self,
-        raw_image_path: str,
-        raw_image_key: str,
-        nt_segmentation_path: str,
-        spline_path: str,
-        sliced_image_path: str,
-        results_table_path: str,
+        raw_image_path: str = "",
+        raw_image_key: str = "raw_rescaled",
+        nt_segmentation_path: str = "",
+        segmentation_channel: int = 1,
+        spline_path: str = "",
+        sliced_image_path: str = "",
+        results_table_path: str = "",
         pixel_size_um: float = 5.79
     ):
         self._load_raw_image(image_path=raw_image_path, image_key=raw_image_key)
-        self._load_neural_tube_segmentation(image_path=nt_segmentation_path)
+        self._load_neural_tube_segmentation(
+            image_path=nt_segmentation_path, segmentation_channel=segmentation_channel
+        )
         self._load_spline(spline_path=spline_path)
         self._load_slices(
             image_path=sliced_image_path,
@@ -273,7 +288,7 @@ class QtResultsViewer(QWidget):
             name="raw image"
         )
 
-    def _load_neural_tube_segmentation(self, image_path: str):
+    def _load_neural_tube_segmentation(self, image_path: str, segmentation_channel: int):
         # get the reader
         reader = napari_get_reader(image_path)
         if reader is None:
@@ -292,7 +307,7 @@ class QtResultsViewer(QWidget):
         )
 
         # take only prediction channel 1 (neural tube)
-        data = data[1, ...]
+        data = data[segmentation_channel, ...]
 
         # add the layer to the viewer
         self._viewer.add_layer(Layer.create(data, metadata, layer_type))
@@ -341,10 +356,12 @@ class QtResultsViewer(QWidget):
         with h5py.File(image_path) as f:
             dataset_keys = list(f.keys())
             if "sliced_stack" in dataset_keys:
+                # code path to support legacy slicing
                 stain_image = f["sliced_stack"][:]
                 stain_metadata = {}
                 stain_image_aligned = False
             else:
+                # currently code path
                 segmentation_image = f["aligned_segmentation_image"][:]
                 segmentation_metadata = dict(f["aligned_segmentation_image"].attrs.items())
                 stain_image = f["aligned_stain_image"][:]
