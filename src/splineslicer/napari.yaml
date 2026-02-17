@@ -1,0 +1,42 @@
+name: splineslicer
+display_name: Spline Slicer
+schema_version: 0.2.0
+
+contributions:
+  commands:
+    - id: splineslicer.get_reader
+      python_name: splineslicer._reader:napari_get_reader
+      title: Get Splineslicer Reader
+
+    - id: splineslicer.make_skeletonize_widget
+      python_name: splineslicer.skeleton._qt_skeletonize:QtSkeletonize
+      title: Make Skeletonize Widget
+
+    - id: splineslicer.make_slice_widget
+      python_name: splineslicer.slice.slice:slice_image_from_file
+      title: Make Slice Widget
+
+    - id: splineslicer.make_measure_widget
+      python_name: splineslicer.measure._qt_measure:QtMeasure
+      title: Make Measure Widget
+
+    - id: splineslicer.make_results_viewer_widget
+      python_name: splineslicer.view.results_viewer:QtResultsViewer
+      title: Make Results Viewer Widget
+
+  readers:
+    - command: splineslicer.get_reader
+      accepts_directories: false
+      filename_patterns: ['*.h5', '*.json']
+
+  widgets:
+    - command: splineslicer.make_skeletonize_widget
+      display_name: Skeletonize
+
+    - command: splineslicer.make_slice_widget
+      display_name: Slice Image from File
+    - command: splineslicer.make_measure_widget
+      display_name: Measure Domains
+
+    - command: splineslicer.make_results_viewer_widget
+      display_name: View Results
