@@ -1,0 +1,133 @@
+[project]
+name = "splineslicer"
+dynamic = ["version"]
+description = "a simple plugin"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+  {name = "Kevin Yamauchi"},
+  {email = "kevin.yamauchi@gmail.com"},
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Framework :: napari",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
+requires-python = ">=3.10"
+# napari can be included in dependencies if napari imports are required.
+# However, you should not include napari[all], napari[qt],
+# or any other Qt bindings directly (e.g. PyQt5, PySide2).
+# See best practices: https://napari.org/stable/plugins/building_a_plugin/best_practices.html
+dependencies = [
+    "geomdl",
+    "h5py",
+    "napari-plugin-engine>=0.1.4",
+    "numpy",
+    "pyqtgraph",
+    "skan>=0.13",
+]
+
+[project.optional-dependencies]
+# Allow easily installation with the full, default napari installation
+# (including Qt backend) using splineslicer-test[all].
+all = ["napari[all]"]
+
+[dependency-groups]
+dev = [
+    "tox-uv",
+    "pytest",  # https://docs.pytest.org/en/latest/contents.html
+    "pytest-cov",  # https://pytest-cov.readthedocs.io/en/latest/
+    "pytest-qt",  # https://pytest-qt.readthedocs.io/en/latest/
+     "napari[all]",  # test with napari's default Qt bindings
+]
+
+[project.entry-points."napari.manifest"]
+splineslicer-test = "splineslicer:napari.yaml"
+
+[project.urls]
+"Bug Tracker" = "https://github.com/kevinyamauchi/splineslicer-test/issues"
+"Documentation" = "https://github.com/kevinyamauchi/splineslicer-test#README.md"
+"Source Code" = "https://github.com/kevinyamauchi/splineslicer-test"
+"User Support" = "https://github.com/kevinyamauchi/splineslicer-test/issues"
+
+[build-system]
+requires = ["setuptools>=42.0.0", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml"]
+
+[tool.setuptools_scm]
+write_to = "src/splineslicer/_version.py"
+fallback_version = "0.0.1+nogit"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
+xfail_strict = true
+# filterwarnings = ["error"]  # recommended by PP309; deprecation warnings cause failures so leaving for the user to enable if desired
+log_cli_level = "INFO"
+testpaths = ["tests"]
+
+[tool.black]
+line-length = 79
+target-version = ['py310', 'py311', 'py312', 'py313']
+
+[tool.ruff]
+line-length = 79
+lint.select = [
+    "E", "F", "W", #flake8
+    "UP", # pyupgrade
+    "I", # isort
+    "BLE", # flake8-blind-exception
+    "B", # flake8-bugbear
+    "A", # flake8-builtins
+    "C4", # flake8-comprehensions
+    "ISC", # flake8-implicit-str-concat
+    "G", # flake8-logging-format
+    "PIE", # flake8-pie
+    "SIM", # flake8-simplify
+]
+lint.ignore = [
+    "E501", # line too long. let black handle this
+    "UP006", "UP007", # type annotation. As using magicgui require runtime type annotation then we disable this.
+]
+
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".mypy_cache",
+    ".pants.d",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "*vendored*",
+    "*_vendor*",
+]
+fix = true

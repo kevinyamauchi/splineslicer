@@ -9,13 +9,11 @@ see: https://napari.org/docs/dev/plugins/hook_specifications.html
 Replace code below accordingly.  For complete documentation see:
 https://napari.org/docs/dev/plugins/for_plugin_developers.html
 """
-from napari_plugin_engine import napari_hook_implementation
 
 from .io.ilastik import load_ilastik_predictions, load_aligned
 from .io.spline import load_spline_geomdl
 
 
-@napari_hook_implementation
 def napari_get_reader(path):
     """A basic implementation of the napari_get_reader hook specification.
 
