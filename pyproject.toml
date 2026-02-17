@@ -48,7 +48,7 @@ dev = [
     "pytest",  # https://docs.pytest.org/en/latest/contents.html
     "pytest-cov",  # https://pytest-cov.readthedocs.io/en/latest/
     "pytest-qt",  # https://pytest-qt.readthedocs.io/en/latest/
-    # "napari[qt]",  # test with napari's default Qt bindings
+     "napari[all]",  # test with napari's default Qt bindings
 ]
 
 [project.entry-points."napari.manifest"]
