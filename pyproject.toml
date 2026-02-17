@@ -1,0 +1,57 @@
+[build-system]
+requires = [
+    "setuptools>=61.2",
+    "setuptools_scm",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "splineslicer"
+authors = [{name = "Kevin Yamauchi", email = "kevin.yamauchi@gmail.com"}]
+license = {text = "BSD-3-Clause"}
+description = "A python package for slicing nD images along splines."
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "Framework :: napari",
+    "Topic :: Software Development :: Testing",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: BSD License",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "geomdl",
+    "h5py",
+    "napari-plugin-engine>=0.1.4",
+    "numpy",
+    "pyqtgraph",
+    "skan>=0.13",
+]
+dynamic = ["version"]
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.urls]
+Homepage = "https://github.com/kevinyamauchi/splineslicer"
+"Bug Tracker" = "https://github.com/kevinyamauchi/splineslicer/issues"
+Documentation = "https://github.com/kevinyamauchi/splineslicer#README.md"
+"Source Code" = "https://github.com/kevinyamauchi/splineslicer"
+"User Support" = "https://github.com/kevinyamauchi/splineslicer/issues"
+
+[project.entry-points]
+"napari.plugin" = {splineslicer = "splineslicer"}
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.packages]
+find = {namespaces = false}
+# add your package requirements here
