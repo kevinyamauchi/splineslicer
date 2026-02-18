@@ -36,6 +36,14 @@ contributions:
       python_name: splineslicer.rotate._qt_rotator:QtUpdatedRotation
       title: Make updated rotation QWidget 
 
+    - id: splineslicer.make_DoubleSlider
+      python_name: splineslicer.sub_slicing._qt_sub_slice:QtDoubleSlider
+      title: Make example QWidget 
+
+    - id: splineslicer.make_SomiteMeasure
+      python_name: splineslicer.sub_slicing._qt_sub_slice:QtMeasureAtSomites
+      title: Make example QWidget 
+
   readers:
     - command: splineslicer.get_reader
       accepts_directories: false
@@ -62,3 +70,9 @@ contributions:
 
     - command: splineslicer.make_UpdatedRotationWidget
       display_name: Updated Rotation 
+
+    - command: splineslicer.make_DoubleSlider
+      display_name: Double Slider
+
+    - command: splineslicer.make_SomiteMeasure
+      display_name: Somite Measurements
