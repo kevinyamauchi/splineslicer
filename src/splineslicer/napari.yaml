@@ -38,11 +38,19 @@ contributions:
 
     - id: splineslicer.make_DoubleSlider
       python_name: splineslicer.sub_slicing._qt_sub_slice:QtDoubleSlider
-      title: Make example QWidget 
+      title: Make subspliner QWidget 
 
     - id: splineslicer.make_SomiteMeasure
       python_name: splineslicer.sub_slicing._qt_sub_slice:QtMeasureAtSomites
-      title: Make example QWidget 
+      title: Make somite measurements QWidget 
+
+    # - id: splineslicer.make_BoundaryCorrection
+    #   python_name: splineslicer.correction._qt_correct:QtBoundaryCorrection
+    #   title: Make boundary correction QWidget 
+
+    - id: splineslicer.make_BoundaryReader
+      python_name: splineslicer.correction._qt_correct:QtBoundaryReader
+      title: Make boundary reader QWidget
 
   readers:
     - command: splineslicer.get_reader
@@ -76,3 +84,9 @@ contributions:
 
     - command: splineslicer.make_SomiteMeasure
       display_name: Somite Measurements
+
+    # - command: splineslicer.make_BoundaryCorrection
+    #   display_name: Boundary Correction
+
+    - command: splineslicer.make_BoundaryReader
+      display_name: Boundary Reader

@@ -10,12 +10,12 @@ from qtpy.QtWidgets import QComboBox, QVBoxLayout, QWidget, QPushButton, QLabel,
 from superqt.sliders import QLabeledSlider
 from skimage.transform import rotate
 from superqt.collapsible import QCollapsible
-from splineslicer._reader import napari_get_reader
 from geomdl import exchange, operations, BSpline
 import geomdl
 
 from .slicer_utils import slice_it
 from ..view.results_viewer_utils import get_plane_coords
+from splineslicer._reader import napari_get_reader
 
 
 class QtDoubleSlider(QWidget):
