@@ -17,3 +17,8 @@ def load_aligned(filepath: str) -> List[ImageData]:
         sliced_image = f['sliced_stack'][:]
 
     return [(sliced_image, {}, 'image')]
+
+def load_any_h5_file(filepath: str) -> List[ImageData]:
+    with h5py.File(filepath, 'r') as f:
+                im = f[list(f.keys())[0]][:]
+    return [(im, {}, 'image')]

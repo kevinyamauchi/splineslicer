@@ -10,7 +10,7 @@ Replace code below accordingly.  For complete documentation see:
 https://napari.org/docs/dev/plugins/for_plugin_developers.html
 """
 
-from .io.ilastik import load_ilastik_predictions, load_aligned
+from .io.ilastik import load_any_h5_file, load_ilastik_predictions, load_aligned
 from .io.spline import load_spline_geomdl
 
 
@@ -44,7 +44,7 @@ def napari_get_reader(path):
         # ilastik autocontext segs
         return load_ilastik_predictions
     elif ".h5" in path:
-        return load_aligned
+        return load_any_h5_file
     elif ".json" in path:
         # geomdl spline
         return load_spline_geomdl
