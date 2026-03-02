@@ -124,6 +124,8 @@ class QtBoundaryCorrection(QWidget):
             self.slice_slider.setValue(current - 1)
 
     def _remove_boundary_on_click(self, event=None):
+
+        # avoid None type error if no data loaded
         if self.results_table is None:
             return
 

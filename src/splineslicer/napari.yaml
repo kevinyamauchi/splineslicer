@@ -20,6 +20,10 @@ contributions:
       python_name: splineslicer.measure._qt_measure:QtMeasure
       title: Make Measure Widget
 
+    - id: splineslicer.make_updated_measure_widget
+      python_name: splineslicer.measure._qt_measure:QtUpdatedMeasurements
+      title: Make Updated Measure Widget
+
     - id: splineslicer.make_results_viewer_widget
       python_name: splineslicer.view.results_viewer:QtResultsViewer
       title: Make Results Viewer Widget
@@ -66,6 +70,9 @@ contributions:
       
     - command: splineslicer.make_measure_widget
       display_name: Measure Domains
+
+    - command: splineslicer.make_updated_measure_widget
+      display_name: Updated Measure Domains
 
     - command: splineslicer.make_results_viewer_widget
       display_name: View Results
