@@ -124,30 +124,29 @@ class QtBoundaryCorrection(QWidget):
             self.slice_slider.setValue(current - 1)
 
     def _remove_boundary_on_click(self, event=None):
-        # get index values from updated sliders
+        if self.results_table is None:
+            return
+
         current_slice_index = int(self.slice_slider.value())
 
-        # select line of interest in the result file
-        res,ind = np.unique(self.results_table["target"], return_index=True)
+        res, ind = np.unique(self.results_table["target"], return_index=True)
         target_names_result_table = res[np.argsort(ind)]
         target_name = target_names_result_table[self.current_channel_index]
-        self.slice_row = self.results_table.loc[
-            (self.results_table["target"] == target_name) &
-            (self.results_table["slice_index"] == current_slice_index)
-        ]
-        
-        # update column of that row according to slider position
-        self.slice_row["ventral_boundary_px"].values[0] = -1
-        self.slice_row["dorsal_boundary_px"].values[0] = -1
-        self.slice_row["ventral_boundary_um"].values[0] =  -1
-        self.slice_row["dorsal_boundary_um"].values[0] =  -1
-        self.slice_row["ventral_boundary_rel"].values[0] =  -1
-        self.slice_row["dorsal_boundary_rel"].values[0] =  -1
 
-        self.results_table.loc[
+        mask = (
             (self.results_table["target"] == target_name) &
             (self.results_table["slice_index"] == current_slice_index)
-        ] = self.slice_row
+        )
+        if not np.any(mask):
+            return
+
+        nt_length_um = self.results_table.loc[mask, "nt_length_um"].iloc[0]
+        self.results_table.loc[mask, "ventral_boundary_px"] = -1
+        self.results_table.loc[mask, "dorsal_boundary_px"] = -1
+        self.results_table.loc[mask, "ventral_boundary_um"] = -1
+        self.results_table.loc[mask, "dorsal_boundary_um"] = -1
+        self.results_table.loc[mask, "ventral_boundary_rel"] = -1 if nt_length_um == 0 else (-1 / nt_length_um)
+        self.results_table.loc[mask, "dorsal_boundary_rel"] = -1 if nt_length_um == 0 else (-1 / nt_length_um)
 
     def _save_on_click(self, event=None):
         res_path = str(self.results_table_path)
@@ -156,32 +155,34 @@ class QtBoundaryCorrection(QWidget):
         print('saved')
 
     def _update_on_click(self, event=None):
-        # get index values from updated sliders
-        current_ventral_index = int(self.ventral_slider.value()) #+ self.start_nt
-        current_dorsal_index = int(self.dorsal_slider.value()) #+ self.start_nt
+        if self.results_table is None:
+            return
+
+        current_ventral_index = int(self.ventral_slider.value())
+        current_dorsal_index = int(self.dorsal_slider.value())
         current_slice_index = int(self.slice_slider.value())
 
-        # select line of interest in the result file
-        res,ind = np.unique(self.results_table["target"], return_index=True)
+        res, ind = np.unique(self.results_table["target"], return_index=True)
         target_names_result_table = res[np.argsort(ind)]
         target_name = target_names_result_table[self.current_channel_index]
-        self.slice_row = self.results_table.loc[
-            (self.results_table["target"] == target_name) &
-            (self.results_table["slice_index"] == current_slice_index)
-        ]
-        
-        # update column of that row according to slider position
-        self.slice_row["ventral_boundary_px"].values[0] = current_ventral_index
-        self.slice_row["dorsal_boundary_px"].values[0] = current_dorsal_index
-        self.slice_row["ventral_boundary_um"].values[0] =  current_ventral_index * self.pixel_size_um
-        self.slice_row["dorsal_boundary_um"].values[0] =  current_dorsal_index * self.pixel_size_um
-        self.slice_row["ventral_boundary_rel"].values[0] =  self.slice_row["ventral_boundary_um"].values[0] / self.slice_row["nt_length_um"].values[0]
-        self.slice_row["dorsal_boundary_rel"].values[0] =  self.slice_row["dorsal_boundary_um"].values[0] / self.slice_row["nt_length_um"].values[0]
 
-        self.results_table.loc[
+        mask = (
             (self.results_table["target"] == target_name) &
             (self.results_table["slice_index"] == current_slice_index)
-        ] = self.slice_row
+        )
+        if not np.any(mask):
+            return
+
+        nt_length_um = self.results_table.loc[mask, "nt_length_um"].iloc[0]
+        ventral_um = current_ventral_index * self.pixel_size_um
+        dorsal_um = current_dorsal_index * self.pixel_size_um
+
+        self.results_table.loc[mask, "ventral_boundary_px"] = current_ventral_index
+        self.results_table.loc[mask, "dorsal_boundary_px"] = current_dorsal_index
+        self.results_table.loc[mask, "ventral_boundary_um"] = ventral_um
+        self.results_table.loc[mask, "dorsal_boundary_um"] = dorsal_um
+        self.results_table.loc[mask, "ventral_boundary_rel"] = ventral_um / nt_length_um if nt_length_um != 0 else np.nan
+        self.results_table.loc[mask, "dorsal_boundary_rel"] = dorsal_um / nt_length_um if nt_length_um != 0 else np.nan
         
     def _move_boundary_with_slider(self, event=None):
         current_ventral_index = int(self.ventral_slider.value()) #+ self.start_nt
@@ -190,9 +191,11 @@ class QtBoundaryCorrection(QWidget):
         self.nt_dorsal_position.setValue(current_dorsal_index)   
 
     def _on_slider_moved(self, event=None):
+        if self.results_table is None:
+            return
         self.draw_at_current_slice_index()
-        self.ventral_slider.setSliderPosition(self.neural_tube_ventral_boundary)
-        self.dorsal_slider.setSliderPosition(self.neural_tube_dorsal_boundary)
+        self.ventral_slider.setSliderPosition(int(self.neural_tube_ventral_boundary))
+        self.dorsal_slider.setSliderPosition(int(self.neural_tube_dorsal_boundary))
 
     def draw_at_current_slice_index(self):
         current_slice_index = int(self.slice_slider.value())
@@ -204,8 +207,12 @@ class QtBoundaryCorrection(QWidget):
         self._update_image(slice_index)
 
     def _get_boundaries(self, slice_index: int):
+
+        if self.results_table is None:
+            return
+
         # update the vertical lines
-        res,ind = np.unique(self.results_table["target"], return_index=True)
+        res, ind = np.unique(self.results_table["target"], return_index=True)
 
         # Sorting indices
         target_names_result_table = res[np.argsort(ind)]
@@ -216,7 +223,9 @@ class QtBoundaryCorrection(QWidget):
             (self.results_table["target"] == target_name) &
             (self.results_table["slice_index"] == slice_index)
         ]
-
+        if slice_row.empty:
+            return
+        
         # set the neural tube boundaries
         if self.draw_domain_boundaries:
             self.start_nt = slice_row["nt_start_column_px"].values[0]
