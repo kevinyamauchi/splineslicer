@@ -9,9 +9,9 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QVBoxLayout, QWidget, QPushButton
 from superqt.sliders import QLabeledSlider
 from skimage.transform import rotate
-import splineslicer
 from superqt.collapsible import QCollapsible
 from .rotations_utils import new_align_rotate
+from ..skeleton.binarize import binarize_image
 
 class QtUpdatedRotation(QWidget):
     def __init__(self, napari_viewer: napari.Viewer):
@@ -98,7 +98,7 @@ class QtUpdatedRotation(QWidget):
         im_seg = self._viewer.layers.selection.active.data
         binarized_im = np.zeros((im_seg.shape))
         for i, chan in enumerate(im_seg):
-            binarized_im[i,...] = splineslicer.skeleton.binarize.binarize_image(im = im_seg, channel=i, threshold=threshold)
+            binarized_im[i,...] = binarize_image(im = im_seg, channel=i, threshold=threshold)
         layer_type = 'image'
         metadata = {
             'name': 'binarized_image',

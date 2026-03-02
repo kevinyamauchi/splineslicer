@@ -211,7 +211,7 @@ class QtBoundaryCorrection(QWidget):
         target_names_result_table = res[np.argsort(ind)]
         target_name = target_names_result_table[self.current_channel_index]
 
-        #target_name = self.stain_channeL_names[self.current_channel_index]
+        # target_name = self.stain_channeL_names[self.current_channel_index]
         slice_row = self.results_table.loc[
             (self.results_table["target"] == target_name) &
             (self.results_table["slice_index"] == slice_index)
@@ -414,8 +414,9 @@ class QtBoundaryReader(QWidget):
         )
 
     def _prepare_slices(self, image_path: str, results_table: pd.DataFrame):
-        hdf5_file = h5py.File(image_path)
-        stain_image = hdf5_file[list(hdf5_file.keys())[0]][1]
+        # hdf5_file = h5py.File(image_path)
+        with h5py.File(image_path) as hdf5_file:
+            stain_image = hdf5_file[list(hdf5_file.keys())[0]][:]
 
         if stain_image.ndim == 3:
             # make sure the image is 4D

@@ -208,7 +208,6 @@ class QtImageSliceWidget(QWidget):
         self.current_channel_index = self.image_selector.currentIndex()
         self.draw_at_current_slice_index()
 
-
 class QtResultsViewer(QWidget):
     def __init__(self, napari_viewer: napari.Viewer):
         super().__init__()
@@ -540,6 +539,5 @@ class QtNormalsViewer(QWidget):
             seg_im,
             name="Olig2 segmentation"
         )
-
 
 

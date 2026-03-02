@@ -1,11 +1,11 @@
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from napari.layers import Image
 import numpy as np 
-import splineslicer
 import napari
 from scipy.signal import find_peaks
 from skimage.measure import label, regionprops
 import math 
+from ..measure.align_slices import rotate_stack
 
 
 def new_align_rotate(
@@ -34,10 +34,10 @@ def new_align_rotate(
         adapted_rotations = np.asarray(adapted_rotations)
 
     # rotate the segmentation
-    rotated_seg = splineslicer.measure.align_slices.rotate_stack(mask_layer.data[NT_segmentation_index,start_slice:end_slice,...], adapted_rotations)
+    rotated_seg = rotate_stack(mask_layer.data[NT_segmentation_index,start_slice:end_slice,...], adapted_rotations)
     rotated_stack_adapted = []
     for i, chan in enumerate(stain_layer.data[:,start_slice:end_slice,...]):
-        rotated_stack_adapted.append(splineslicer.measure.align_slices.rotate_stack(np.asarray(chan), adapted_rotations))
+        rotated_stack_adapted.append(rotate_stack(np.asarray(chan), adapted_rotations))
     
     # if no NT segmented or multiple segmented elements are found then the slice is not taken and axis 1 (nb of slices)
     # may become <100. needs to account for this 
