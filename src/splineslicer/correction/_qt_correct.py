@@ -56,16 +56,6 @@ class QtBoundaryCorrection(QWidget):
         )
         self.image_widget.addItem(self.nt_dorsal_position)
 
-        # create the plot
-        # self.plot_column_selector = QComboBox()
-        # self.plot_column_selector.currentIndexChanged.connect(self._update_plot)
-        self.plot_widget = pg.PlotWidget(parent=self)
-        self.plot_slice_line = pg.InfiniteLine(
-            angle=90,
-            movable=False
-        )
-        self.plot_widget.addItem(self.plot_slice_line)
-
         # create ventral slider
         self.ventral_slider = QLabeledSlider(Qt.Orientation.Horizontal)
         self.ventral_slider.setRange(0, 99)
@@ -98,8 +88,6 @@ class QtBoundaryCorrection(QWidget):
         self.layout().addWidget(self.slice_slider)
         self.layout().addWidget(self.image_selector)
         self.layout().addWidget(self.image_widget)
-        # self.layout().addWidget(self.plot_column_selector)
-        # self.layout().addWidget(self.plot_widget)
         self.layout().addWidget(self.ventral_slider)
         self.layout().addWidget(self.dorsal_slider)
         self.layout().addWidget(self.update_widget)
@@ -124,7 +112,6 @@ class QtBoundaryCorrection(QWidget):
             self.slice_slider.setValue(current - 1)
 
     def _remove_boundary_on_click(self, event=None):
-
         # avoid None type error if no data loaded
         if self.results_table is None:
             return
@@ -202,7 +189,7 @@ class QtBoundaryCorrection(QWidget):
     def draw_at_current_slice_index(self):
         current_slice_index = int(self.slice_slider.value())
         self.draw_at_slice_index(current_slice_index)
-        self._update_plot_slice_line(current_slice_index)
+        # self._update_plot_slice_line(current_slice_index)
 
     def draw_at_slice_index(self, slice_index: int):
         self._get_boundaries(slice_index)
@@ -253,37 +240,6 @@ class QtBoundaryCorrection(QWidget):
 
         # update the image slice
         self.image_widget.setImage(image_slice)
-
-    def _update_plot(self, event=None):
-
-        if len(self.stain_channeL_names) == 0:
-            # if no data loaded - just return
-            return
-
-        self.plot_widget.clear()
-
-        # get the column
-        current_target = self.stain_channeL_names[self.current_channel_index]
-        target_measurements = self.results_table.loc[self.results_table["target"] == current_target]
-        column_to_plot = self.plot_column_selector.currentText()
-        y_data = target_measurements[column_to_plot].values
-        x_data = target_measurements["slice_index"].values
-
-        self.plot_widget.plot(x_data, y_data)
-
-        self.plot_widget.addItem(self.plot_slice_line)
-        current_slice_index = int(self.slice_slider.value())
-        self.plot_slice_line.setValue(current_slice_index)
-
-        # set the labels
-        axis_parameters = {
-            "bottom": pg.AxisItem(orientation="bottom", text="slice index"),
-            "left": pg.AxisItem(orientation="left", text=column_to_plot)
-        }
-        self.plot_widget.setAxisItems(axis_parameters)
-
-    def _update_plot_slice_line(self, slice_index):
-        self.plot_slice_line.setValue(slice_index)
 
     def set_data(
             self,
@@ -370,17 +326,7 @@ class QtBoundaryReader(QWidget):
                 'widget_type': 'FileEdit', 'mode': 'r',
                 'filter': '*.csv'
             }
-            # spline_path={
-            #     'label': 'spline path',
-            #     'widget_type': 'FileEdit',
-            #     'mode': 'r',
-            #     'filter': '*.json'
-            # },
-            # raw_image_path={
-            #     'label': 'raw image path',
-            #     'widget_type': 'FileEdit', 'mode': 'r',
-            #     'filter': '*.h5'
-            # }
+
         )
         self.image_slice_widget = QtBoundaryCorrection()
         self.image_slice_widget.setVisible(False)
@@ -395,8 +341,6 @@ class QtBoundaryReader(QWidget):
         segmentation_channel: int = 3,
         sliced_image_path: str = "",
         results_table_path: str = "",
-        # spline_path: str = "",
-        # raw_image_path: str = "",
         pixel_size_um: float = 5.79
     ):
         self._load_slices(
@@ -404,8 +348,7 @@ class QtBoundaryReader(QWidget):
             results_table_path=results_table_path,
             pixel_size_um=pixel_size_um
         )
-        # self._load_spline(spline_path=spline_path)
-        # self._load_raw_image(image_path=raw_image_path)
+
 
     def _load_slices(self, image_path: str, results_table_path: str, pixel_size_um: float):
         # load the data
@@ -444,6 +387,29 @@ class QtBoundaryReader(QWidget):
         return stain_image, stain_channel_names
 
     def _load_spline(self, spline_path: str):
+        """
+        Load a spline from a file and set up the visualization with slicing plane and point.
+        This method reads a spline file using napari's reader system, adds it as a layer
+        to the viewer, and initializes the slicing interface with a plane and control point.
+        Parameters
+        ----------
+        spline_path : str
+            Path to the spline file to load.
+        Raises
+        ------
+        ValueError
+            If no suitable reader is found for the given spline file path.
+        Notes
+        -----
+        This method performs the following operations:
+        - Loads the spline data using napari's reader system
+        - Adds the spline as a layer to the viewer
+        - Extracts the spline model from the layer metadata
+        - Creates and adds a slicing plane surface at the midpoint (0.5) with a size of 10
+        - Connects the slice slider to update the plane position when changed
+        - Adds a spherical point at the origin for slice point reference
+        """
+        
         # get the reader
         reader = napari_get_reader(spline_path)
         if reader is None:
@@ -468,6 +434,23 @@ class QtBoundaryReader(QWidget):
         self._viewer.add_points(data=[[0, 0, 0]], name="slice point", shading="spherical")
 
     def _update_slice_plane(self, slice_coordinate):
+        """
+        Update the slice plane visualization based on the given slice coordinate.
+        Parameters
+        ----------
+        slice_coordinate : float
+            The coordinate position for the slice plane, scaled by 1/100.
+        Returns
+        -------
+        None
+        Notes
+        -----
+        This method retrieves the spline model from the viewer's metadata, calculates
+        the plane coordinates and normal vector at the specified slice position, and
+        updates the visualization layers ("slice plane" and "slice point") with the
+        computed geometry and position data.
+        """
+        
         spline_model = self._viewer.layers["spline"].metadata["spline"]
         plane_coords, faces, center_position, plane_normal = get_plane_coords(
             spline_model, slice_coordinate / 100, 10
