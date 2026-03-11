@@ -208,7 +208,6 @@ class QtImageSliceWidget(QWidget):
         self.current_channel_index = self.image_selector.currentIndex()
         self.draw_at_current_slice_index()
 
-
 class QtResultsViewer(QWidget):
     def __init__(self, napari_viewer: napari.Viewer):
         super().__init__()
@@ -413,6 +412,132 @@ class QtResultsViewer(QWidget):
         self._viewer.layers["slice plane"].data = (plane_coords, faces, values)
         self._viewer.layers["slice point"].data = center_position
 
+class QtNormalsViewer(QWidget):
+    def __init__(self, napari_viewer: napari.Viewer):
+        super().__init__()
 
+        # store the viewer
+        self._viewer = napari_viewer
+
+        # make the load data widget
+        self.load_data_widget = magicgui(
+            self.load_data,
+            spline_path={
+                'label': 'spline path',
+                'widget_type': 'FileEdit',
+                'mode': 'r',
+                'filter': '*.json'
+            },
+            raw_image_path={
+                'label': 'raw image path',
+                'widget_type': 'FileEdit', 'mode': 'r',
+                'filter': '*.h5'
+            }
+        )
+        
+        # create a slider to go through all slices and check the normal of the plane
+        self.slice_slider = QLabeledSlider(Qt.Orientation.Horizontal)
+        self.slice_slider.setRange(0, 99)
+        self.slice_slider.setSliderPosition(50)
+        self.slice_slider.setSingleStep(1)
+        self.slice_slider.setTickInterval(1)
+        self.slice_slider.valueChanged.connect(self._update_slice_plane)
+
+        # make the layout
+        self.setLayout(QVBoxLayout())
+        self.layout().addWidget(self.load_data_widget.native)
+        self.layout().addWidget(self.slice_slider)
+
+    def load_data(
+        self,
+        spline_path: str = "",
+        raw_image_path: str = ""
+    ):
+        self._load_raw_image(image_path=raw_image_path)
+        self._load_spline(spline_path=spline_path)
+        #self._load_segmentation(image_path=olig_seg_path)
+
+    def _load_spline(self, spline_path: str):
+        # get the reader
+        reader = napari_get_reader(spline_path)
+        if reader is None:
+            raise ValueError(f"no reader found for {spline_path}")
+
+        # load the layer data
+        layer_data = reader(spline_path)[0]
+
+        # add the layer to the viewer
+        self._viewer.add_layer(Layer.create(*layer_data))
+
+        # add the slicing plane
+        spline_model = self._viewer.layers["spline"].metadata["spline"]
+        plane_coords, faces, center_position, plane_normal = get_plane_coords(
+            spline_model, 0.5, 10
+        )
+        values = np.ones(4)
+        self._viewer.add_surface(data=(plane_coords, faces, values), name="slice plane")
+
+        self.vector = [center_position, plane_normal]
+        self._viewer.add_vectors(self.vector, edge_width=1, length=100, edge_color='green', name="normal_vector")
+
+        # add the slicing point
+        self._viewer.add_points(data=[[0, 0, 0]], name="slice point", shading="spherical")
+
+    def _update_slice_plane(self, slice_coordinate):
+        spline_model = self._viewer.layers["spline"].metadata["spline"]
+        plane_coords, faces, center_position, plane_normal = get_plane_coords(
+            spline_model, slice_coordinate / 100, 10
+        )
+        values = np.ones(4)
+        self._viewer.layers["slice plane"].data = (plane_coords, faces, values)
+        self._viewer.layers["slice point"].data = center_position
+
+        self.vector = [center_position, plane_normal]
+        self._viewer.layers["normal_vector"].data = self.vector
+
+
+        plane_parameters = {
+            'position': (center_position[0], center_position[1], center_position[2]),
+            'normal': (plane_normal[0], plane_normal[1], plane_normal[2]),
+            'thickness': 10}
+
+        self._viewer.layers["plane"].plane = plane_parameters
+        
+    def _load_raw_image(self, image_path: str):
+        # load the image
+        with h5py.File(image_path) as f:
+            image = f[list(f.keys())[0]][:]
+        
+        # add the layer to the viewer
+        self._viewer.add_image(
+            image,
+            name="raw image"
+        )
+
+        plane_parameters = {
+            'position': (32, 32, 32),
+            'normal': (1, 0, 0),
+            'thickness': 10}
+
+        self._viewer.add_image(
+            data = self._viewer.layers["raw image"].data,
+            rendering='average',
+            name='plane',
+            colormap='bop orange',
+            blending='additive',
+            opacity=0.5,
+            depiction="plane",
+            plane=plane_parameters)
+
+    def _load_segmentation(self, image_path: str):
+        # load the image
+        with h5py.File(image_path) as f:
+            seg_im = f[list(f.keys())[0]][0,...]
+
+        # add the layer to the viewer
+        self._viewer.add_image(
+            seg_im,
+            name="Olig2 segmentation"
+        )
 
 

@@ -20,9 +20,41 @@ contributions:
       python_name: splineslicer.measure._qt_measure:QtMeasure
       title: Make Measure Widget
 
+    - id: splineslicer.make_updated_measure_widget
+      python_name: splineslicer.measure._qt_measure:QtUpdatedMeasurements
+      title: Make Updated Measure Widget
+
     - id: splineslicer.make_results_viewer_widget
       python_name: splineslicer.view.results_viewer:QtResultsViewer
       title: Make Results Viewer Widget
+
+    - id: splineslicer.make_NormalsViewer
+      python_name: splineslicer.view.results_viewer:QtNormalsViewer
+      title: Normals Viewer
+
+    - id: splineslicer.make_RotationWidget
+      python_name: splineslicer.rotate._qt_rotator:QtRotationWidget
+      title: Make rotation QWidget 
+
+    - id: splineslicer.make_UpdatedRotationWidget
+      python_name: splineslicer.rotate._qt_rotator:QtUpdatedRotation
+      title: Make updated rotation QWidget 
+
+    - id: splineslicer.make_DoubleSlider
+      python_name: splineslicer.sub_slicing._qt_sub_slice:QtDoubleSlider
+      title: Make subspliner QWidget 
+
+    - id: splineslicer.make_SomiteMeasure
+      python_name: splineslicer.sub_slicing._qt_sub_slice:QtMeasureAtSomites
+      title: Make somite measurements QWidget 
+
+    # - id: splineslicer.make_BoundaryCorrection
+    #   python_name: splineslicer.correction._qt_correct:QtBoundaryCorrection
+    #   title: Make boundary correction QWidget 
+
+    - id: splineslicer.make_BoundaryReader
+      python_name: splineslicer.correction._qt_correct:QtBoundaryReader
+      title: Make boundary reader QWidget
 
   readers:
     - command: splineslicer.get_reader
@@ -31,12 +63,37 @@ contributions:
 
   widgets:
     - command: splineslicer.make_skeletonize_widget
-      display_name: Skeletonize
+      display_name: 1. Skeletonize
 
     - command: splineslicer.make_slice_widget
-      display_name: Slice Image from File
-    - command: splineslicer.make_measure_widget
-      display_name: Measure Domains
+      display_name: 2. Slice Image from File
+
+    - command: splineslicer.make_UpdatedRotationWidget
+      display_name: 3. Updated Rotation 
+
+    - command: splineslicer.make_RotationWidget
+      display_name: 4. Correct Rotation
+
+    - command: splineslicer.make_updated_measure_widget
+      display_name: 5. Updated Measure Domains
+
+    - command: splineslicer.make_BoundaryReader
+      display_name: 6. Read and Correct Boundaries
+
+    - command: splineslicer.make_NormalsViewer
+      display_name: 7. View Normals
+
+    - command: splineslicer.make_DoubleSlider
+      display_name: 8. Double Slider
+
+    - command: splineslicer.make_SomiteMeasure
+      display_name: 9. Somite Measurements
+
+    # - command: splineslicer.make_BoundaryCorrection
+    #   display_name: Boundary Correction
 
     - command: splineslicer.make_results_viewer_widget
-      display_name: View Results
+      display_name: Legacy Results Viewer
+
+    - command: splineslicer.make_measure_widget
+      display_name: Legacy Domain Measurements
