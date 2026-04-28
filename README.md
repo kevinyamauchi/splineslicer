@@ -1,30 +1,39 @@
 # splineslicer
 
-[![License](https://img.shields.io/pypi/l/splineslicer.svg?color=green)](https://github.com/kevinyamauchi/splineslicer/raw/master/LICENSE)
+[![License](https://img.shields.io/pypi/l/splineslicer.svg?color=green)](https://github.com/alvillars/splineslicer/raw/main/LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/splineslicer.svg?color=green)](https://pypi.org/project/splineslicer)
 [![Python Version](https://img.shields.io/pypi/pyversions/splineslicer.svg?color=green)](https://python.org)
-[![tests](https://github.com/kevinyamauchi/splineslicer/workflows/tests/badge.svg)](https://github.com/kevinyamauchi/splineslicer/actions)
-[![codecov](https://codecov.io/gh/kevinyamauchi/splineslicer/branch/master/graph/badge.svg)](https://codecov.io/gh/kevinyamauchi/splineslicer)
+[![tests](https://github.com/alvillars/splineslicer/actions/workflows/test_and_deploy.yml/badge.svg)](https://github.com/alvillars/splineslicer/actions)
 
-A python package for slicing nD images along splines.
+A python package for slicing nD images along splines. This tool is designed to help align and measure curved structures in 3D/nD biological images by "unrolling" them along a central axis (spline).
 
-----------------------------------
+---
 
-This [napari] plugin was generated with [Cookiecutter] using with [@napari]'s [cookiecutter-napari-plugin] template.
+*Note: This README has been updated and structured with the assistance of AI to ensure accuracy and clarity.*
 
-<!--
-Don't miss the full getting started guide to set up your new package:
-https://github.com/napari/cookiecutter-napari-plugin#getting-started
+## Project Structure & Features
 
-and review the napari docs for plugin developers:
-https://napari.org/docs/plugins/index.html
--->
+The project is organized into several modules, each handling a specific step in the image processing pipeline:
+
+- **`skeleton`**: Tools for binarizing images and extracting a "skeleton" or centerline of the structure of interest. It includes a GUI for interactive pruning of branches.
+- **`spline`**: Functions to convert skeletons into smooth mathematical splines (B-splines) that can be sampled continuously.
+- **`slice`**: The core logic for "slicing" the original nD image volume perpendicularly to the spline, effectively straightening the structure.
+- **`rotate`**: Tools to align the orientation of the slices (e.g., aligning the dorso-ventral axis) so that the structure is consistently oriented across the entire stack.
+- **`measure`**: Functions for measuring boundaries, aligning slices, and extracting quantitative data from the straightened images.
+- **`sub_slicing`**: Specialized logic for further refining the slicing process.
+- **`correction`**: A GUI widget for manually correcting spline points or measurement results.
+- **`view`**: Result viewers for inspecting the output of the slicing and measurement pipeline.
+- **`io`**: Handlers for reading and writing data in various formats, including HDF5, Ilastik projects, and JSON splines.
 
 ## Installation
 
 You can install `splineslicer` via [pip]:
 
     pip install splineslicer
+
+For the latest development version:
+
+    pip install git+https://github.com/alvillars/splineslicer.git
 
 ## Contributing
 
@@ -34,7 +43,7 @@ the coverage at least stays the same before you submit a pull request.
 ## License
 
 Distributed under the terms of the [BSD-3] license,
-"splineslicer" is free and open source software
+"splineslicer" is free and open source software.
 
 ## Issues
 
@@ -43,15 +52,9 @@ If you encounter any problems, please [file an issue] along with a detailed desc
 [napari]: https://github.com/napari/napari
 [Cookiecutter]: https://github.com/audreyr/cookiecutter
 [@napari]: https://github.com/napari
-[MIT]: http://opensource.org/licenses/MIT
 [BSD-3]: http://opensource.org/licenses/BSD-3-Clause
-[GNU GPL v3.0]: http://www.gnu.org/licenses/gpl-3.0.txt
-[GNU LGPL v3.0]: http://www.gnu.org/licenses/lgpl-3.0.txt
-[Apache Software License 2.0]: http://www.apache.org/licenses/LICENSE-2.0
-[Mozilla Public License 2.0]: https://www.mozilla.org/media/MPL/2.0/index.txt
 [cookiecutter-napari-plugin]: https://github.com/napari/cookiecutter-napari-plugin
-[file an issue]: https://github.com/kevinyamauchi/splineslicer/issues
-[napari]: https://github.com/napari/napari
+[file an issue]: https://github.com/alvillars/splineslicer/issues
 [tox]: https://tox.readthedocs.io/en/latest/
 [pip]: https://pypi.org/project/pip/
 [PyPI]: https://pypi.org/
