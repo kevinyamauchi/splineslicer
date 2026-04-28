@@ -15,6 +15,7 @@ def new_align_rotate(
         end_slice: Optional[int] = None,
         NT_segmentation_index: int=0,
         background_index: int=0,
+        flip_rotation_indices: str = " ",
         invert_rotation: bool = False
         ) -> "napari.types.LayerDataTuple":
     
@@ -24,8 +25,18 @@ def new_align_rotate(
     if end_slice is None:
         end_slice = mask_layer.data.shape[0]
 
-    rotations, line_scans, orientations, pos, adapted_rotations = calculate_slice_rotations(mask_layer.data[NT_segmentation_index,start_slice:end_slice,...]
-                                                                        ,mask_layer.data[background_index,start_slice:end_slice,...], p=0.6)
+
+    flip_rotation_indices.replace(" ", "")
+    if flip_rotation_indices == '':
+        flip_rotation_indices = None
+    else:
+        flip_rotation_indices = flip_rotation_indices.replace(" ", "").split(",")
+        flip_rotation_indices = [int(index) for index in flip_rotation_indices]
+
+    rotations, line_scans, orientations, pos, adapted_rotations = calculate_slice_rotations(
+        mask_layer.data[NT_segmentation_index,start_slice:end_slice,...]
+        ,mask_layer.data[background_index,start_slice:end_slice,...], p=0.6,
+        flip_rotation_indices=flip_rotation_indices)
     
     print(invert_rotation)
     if invert_rotation is True:
@@ -49,7 +60,11 @@ def new_align_rotate(
     return (rotated_stack_adapted, {'name': 'output_rotation', 'colormap': 'gray'}, 'image')
 
 
-def calculate_slice_rotations(im_stack: np.ndarray, im_stack_chan: np.ndarray, max_rotation:float = 45, p=0.5) -> List[float]:
+def calculate_slice_rotations(im_stack: np.ndarray, 
+                              im_stack_chan: np.ndarray, 
+                              max_rotation:float = 45, 
+                              p=0.5,
+                              flip_rotation_indices: Optional[List[int]] = None) -> List[float]:
     """Calculate the rotation angle to align each slice so the
     objects long axis is aligned with the horizontal axis.
 
@@ -157,5 +172,10 @@ def calculate_slice_rotations(im_stack: np.ndarray, im_stack_chan: np.ndarray, m
     switching_ind = np.asarray(np.where(switches == 2)[0]+1) # these flipped would be equal to 2, these are the flipped indices
     if len(switching_ind)>0:
         np.array(adapted_rotations)[switching_ind] = np.array(adapted_rotations)[switching_ind]+180
+
+    # correct flipped alignments
+    if flip_rotation_indices is not None:
+        for slice_index in flip_rotation_indices:
+            rotations[slice_index::] = np.asarray(rotations[slice_index::]) + 180
 
     return rotations, line_scans, orientations, pos, np.asarray(adapted_rotations)
