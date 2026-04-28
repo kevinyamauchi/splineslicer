@@ -35,7 +35,8 @@ def new_align_rotate(
 
     rotations, line_scans, orientations, pos, adapted_rotations = calculate_slice_rotations(
         mask_layer.data[NT_segmentation_index,start_slice:end_slice,...]
-        ,mask_layer.data[background_index,start_slice:end_slice,...], p=0.6)
+        ,mask_layer.data[background_index,start_slice:end_slice,...], p=0.6,
+        flip_rotation_indices=flip_rotation_indices)
     
     print(invert_rotation)
     if invert_rotation is True:
@@ -175,6 +176,6 @@ def calculate_slice_rotations(im_stack: np.ndarray,
     # correct flipped alignments
     if flip_rotation_indices is not None:
         for slice_index in flip_rotation_indices:
-            rotations[slice_index::] = rotations[slice_index::] + 180
+            rotations[slice_index::] = np.asarray(rotations[slice_index::]) + 180
 
     return rotations, line_scans, orientations, pos, np.asarray(adapted_rotations)
