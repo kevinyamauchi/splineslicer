@@ -31,9 +31,32 @@ You can install `splineslicer` via [pip]:
 
     pip install splineslicer
 
-For the latest development version:
 
-    pip install git+https://github.com/alvillars/splineslicer.git
+Installation with uv
+
+in windows:
+
+    uv venv --python 3.11
+
+    .venv\Scripts\activate
+
+
+
+in mac/linux: 
+
+    uv venv --python cpython-3.11-macos-aarch64-none
+
+    source .venv/bin/activate 
+
+then install napari: 
+
+    (uv) pip install "napari[all]"
+
+
+
+and then for the latest development version:
+
+    (uv) pip install git+https://github.com/alvillars/splineslicer.git
 
 ## Contributing
 
