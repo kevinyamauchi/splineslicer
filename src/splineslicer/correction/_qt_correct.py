@@ -10,7 +10,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QVBoxLayout, QWidget, QPushButton, QShortcut
 from superqt.sliders import QLabeledSlider
 import napari
-from PyQt5.QtGui import QKeySequence
+from qtpy.QtGui import QKeySequence
 
 from ..view.results_viewer_utils import get_plane_coords
 from splineslicer._reader import napari_get_reader
